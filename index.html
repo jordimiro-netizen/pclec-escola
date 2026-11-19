@@ -19,6 +19,9 @@
 .tablewrap{overflow-x:auto}.studenttable{border-collapse:collapse;width:100%;min-width:880px;color:#111;font-size:16px}.studenttable th,.studenttable td{border-top:1px solid black;border-bottom:1px solid black;padding:19px 13px;text-align:left}.studenttable th{height:80px;font-weight:900}.studenttable td{height:82px}.studenttable tr:nth-child(even) td{background:#fafafa}.studenttable td:nth-child(2){font-weight:900}
 .emptysection{border:1px solid #ddd;padding:24px;max-width:920px}.demolabel{font-size:12px;color:#666;margin:0 0 18px}
 @media(max-width:700px){.adminheader{height:220px}.adminbrand{font-size:33px}.adminlangs{left:auto;right:22px;top:16px}.adminright{right:18px;top:65px}.iconnav{left:12px;right:auto;bottom:12px;gap:5px}.iconnav button{width:36px;height:36px;font-size:16px}.schoolname{bottom:63px;font-size:15px}.schoolname small{font-size:14px}.adminmain{padding-top:30px}.filters{gap:8px}}
+</style><style>
+/* Llistat de proves: fidelitat visual a la pantalla de referència */
+.testtable{width:100%;border-collapse:collapse;table-layout:auto;border:1px solid #171717;font-size:15px}.testtable th,.testtable td{border-bottom:1px solid #171717;padding:16px 12px;text-align:left;vertical-align:middle}.testtable th{font-weight:900}.testtable td:nth-child(2){min-width:104px}.testtable td:last-child{width:52%;line-height:1.9}.reading-link{background:none;border:0;color:#003957;font-weight:800;font-size:14px;cursor:pointer;padding:0 8px 0 0;text-align:left}.reading-link:hover{text-decoration:underline}.reading-note{font-size:13px;color:#666;margin:14px 0}.filters.testfilters{margin-bottom:34px}.testfilters select{min-width:140px}.testfilters input{min-width:190px}.reading-preview{border:1px solid #bbb;padding:22px;background:white;max-width:760px;margin-top:20px}.reading-preview button{border:1px solid #003957;background:#fff;padding:9px 16px;cursor:pointer}.testtable tr:hover td{background:#fafafa}@media(max-width:760px){.testtable{font-size:13px}.testtable th,.testtable td{padding:10px 7px}.testtable td:last-child{min-width:220px}}
 </style></head><body>
 <section id="public"><div class="hero paper"><header class="top"><div class="identity">PCLEC<small>Escola Sant Jeroni</small></div><div class="right"><div class="langs"><button class="active" data-lang="CA">CA</button><button data-lang="ES">ES</button><button data-lang="EN">EN</button></div><button class="login-btn" id="openLogin">ÀREA D'USUARI&nbsp; ◉</button></div></header><div class="headline"><h1>Proves de comprensió<br>lectora</h1><p>Mesura de la comprensió lectora de<br>segon a sisè d'Educació Primària</p></div><div class="kids" aria-label="Il·lustració d'infants llegint"></div></div><div class="tealbar"><button id="openMenu" aria-label="Obrir menú">☰</button></div><footer class="footer"><strong>PCLEC · Escola Sant Jeroni</strong>Plataforma de comprensió lectora · Accés restringit al centre</footer></section>
 <div class="overlay hide" id="overlay"><div class="dialog" role="dialog" aria-modal="true" aria-labelledby="loginTitle"><button class="close" id="closeLogin" aria-label="Tancar">×</button><h2 id="loginTitle">Àrea d'usuari</h2><label class="field" for="user">Usuari</label><input id="user" autocomplete="off" placeholder="Usuari de demostració"><label class="field" for="password">Contrasenya</label><input id="password" type="password" placeholder="Contrasenya de demostració"><label class="field" for="role">Perfil de prova</label><select id="role"><option value="teacher">Docent</option><option value="admin">Administrador</option><option value="pupil">Alumne/a</option></select><button class="primary" id="enter">Entrar (demostració)</button><div class="hint">Prototip visual. Encara no hi ha autenticació real. No introdueixis credencials personals ni dades d'alumnes.</div></div></div>
@@ -36,11 +39,42 @@ const pupils=[['50001','Marina','Ferrer Solé','mferrer','F','3P','A'],['50002',
 function showSection(index){
  document.querySelectorAll('.iconnav button').forEach((b,i)=>b.classList.toggle('selected',i===index));
  const name=sections[index][1];
+ if(index===1){showTests();return}
  if(index!==0){$('adminmain').innerHTML='<h2>'+name+'</h2><div class="emptysection"><p>Apartat en construcció. Reproduirem la pantalla original i les seves funcions.</p><p class="demolabel">Entorn de demostració: no es desen dades reals.</p></div>';return}
  $('adminmain').innerHTML=`<h2>Gestió d'usuaris</h2><div class="filters"><select id="kind"><option>Alumnat</option><option>Professorat</option></select><select id="gender"><option value="">Gènere</option><option value="F">F</option><option value="M">M</option></select><select id="level"><option value="">Nivell</option><option>2P</option><option>3P</option><option>4P</option><option>5P</option><option>6P</option></select><select id="group"><option value="">Grup</option><option>A</option><option>B</option></select><input id="search" placeholder="Cercar..." aria-label="Cercar alumnat"></div><div class="actions"><select id="bulk"><option value="">Accions massives</option><option value="password">Canviar contrasenya</option><option value="disable">Baixa</option></select><button id="apply" disabled>APLICA</button></div><p class="demolabel">Dades completament fictícies · Funcions massives desactivades en aquesta demostració.</p><div class="tablewrap"><table class="studenttable"><thead><tr><th><input type="checkbox" id="all" aria-label="Seleccionar tots"></th><th>ID</th><th>Nom</th><th>Cognoms</th><th>Usuari</th><th>Gènere</th><th>Nivell</th><th>Grup</th><th>Tipografia</th></tr></thead><tbody id="studentrows"></tbody></table></div>`;
  const render=()=>{const q=$('search').value.toLocaleLowerCase();const matches=pupils.filter(p=>(!$('gender').value||p[4]===$('gender').value)&&(!$('level').value||p[5]===$('level').value)&&(!$('group').value||p[6]===$('group').value)&&p.join(' ').toLocaleLowerCase().includes(q));$('studentrows').innerHTML=matches.map(p=>`<tr><td><input type="checkbox" aria-label="Seleccionar alumne fictici"></td>${p.map(v=>'<td>'+v+'</td>').join('')}<td>Estàndard</td></tr>`).join('')||'<tr><td colspan="9">Cap resultat</td></tr>'};
  ['gender','level','group','search'].forEach(id=>$(id).addEventListener('input',render));$('all').onchange=e=>document.querySelectorAll('#studentrows input').forEach(c=>c.checked=e.target.checked);render();
 }
+
+const tests=[
+ ['149390','Modelo F1','Castellà','F','2P',['F101. ¡NO DIGAS MENTIRAS!','F102. LOS GRANDES FELINOS']],
+ ['149389','Modelo F1','Català','F','2P',['F101. EL PANDA VERMELL','F102. EL VETERINARI DEL ZOO']],
+ ['104320','Modelo E1','Castellà','E','2P',['E101. OBSERVANDO EL CIELO','E102. ANIMALES POLARES']],
+ ['104165','Modelo E1','Català','E','2P',['EN RUFUS, EL PEIX PALLASSO',"L’ARC DE SANT MARTÍ"]],
+ ['65960','Modelo D1','Castellà','D','2P',['LA MUÑECA DESAPARECIDA','LOS PATOS']],
+ ['63657','Modelo D1','Català','D','2P',["UNA CASA NIU D’OCELLS",'EL SOL']],
+ ['33497','Modelo F 6th','Anglès','F','6P',['K3 RESTAURANT','UNFORGETTABLE HALLOWEEN','PET LOVERS']],
+ ['33496','Modelo F 5th','Anglès','F','5P',['AN ORAL PRESENTATION','K3 RESTAURANT','UNFORGETTABLE HALLOWEEN']],
+ ['33495','Modelo F 4th','Anglès','F','4P',['ENGLISH SUMMER CAMP','AN ORAL PRESENTATION','K3 RESTAURANT']],
+ ['33494','Modelo F 3rd','Anglès','F','3P',['MUSICAL BUMPS','MY DAY','ENGLISH SUMMER CAMP']],
+ ['33464','Modelo F6','Castellà','F','6P',['F04. EL SECRETO DE MAX','F05. LAS ABEJAS Y LA MIEL','F06. LA RESPUESTA ES...','F07. CAZA BAJO EL HIELO']]
+];
+function showTests(){
+ $('adminmain').innerHTML=`<h2>Llistat de proves</h2><div class="filters testfilters"><select id="testlang" aria-label="Llengua"><option value="">Llengua</option><option>Català</option><option>Castellà</option><option>Anglès</option></select><select id="testmodel" aria-label="Model"><option value="">Model</option>${'ABCDEF'.split('').map(m=>`<option>${m}</option>`).join('')}</select><select id="testlevel" aria-label="Nivell"><option value="">Nivell</option>${['2P','3P','4P','5P','6P'].map(n=>`<option>${n}</option>`).join('')}</select><input id="testsearch" placeholder="Cercar..." aria-label="Cercar proves"></div><div class="tablewrap"><table class="testtable"><thead><tr><th>ID</th><th>Nom</th><th>Llengua</th><th>Model</th><th>Nivell</th><th>Lectures</th></tr></thead><tbody id="testrows"></tbody></table></div><p class="reading-note">Llistat parcial de referència. Les lectures encara no estan importades; no es mostren preguntes inventades.</p><div id="readingpreview" aria-live="polite"></div>`;
+ const render=()=>{
+  const q=$('testsearch').value.toLocaleLowerCase();
+  const found=tests.filter(t=>(!$('testlang').value||t[2]===$('testlang').value)&&(!$('testmodel').value||t[3]===$('testmodel').value)&&(!$('testlevel').value||t[4]===$('testlevel').value)&&t.flat().join(' ').toLocaleLowerCase().includes(q));
+  $('testrows').innerHTML=found.map(t=>`<tr><td>${t[0]}</td><td>${t[1]}</td><td>${t[2]}</td><td>${t[3]}</td><td>${t[4]}</td><td>${t[5].map(r=>`<button class="reading-link" data-reading="${encodeURIComponent(r)}">${r}</button>`).join(' ')}</td></tr>`).join('')||'<tr><td colspan="6">Cap prova coincideix amb els filtres.</td></tr>';
+  document.querySelectorAll('[data-reading]').forEach(b=>b.onclick=()=>{
+    const name=decodeURIComponent(b.dataset.reading);
+    $('readingpreview').innerHTML=`<div class="reading-preview"><h3>${name}</h3><p>Lectura pendent d’incorporar a la biblioteca de proves. Conservarem la imatge original i les preguntes verificades quan disposem dels materials.</p><button id="closepreview">Tancar</button></div>`;
+    $('closepreview').onclick=()=>$('readingpreview').innerHTML='';
+    $('readingpreview').scrollIntoView({behavior:'smooth',block:'nearest'});
+  });
+ };
+ ['testlang','testmodel','testlevel','testsearch'].forEach(id=>$(id).addEventListener('input',render));render();
+}
+
 $('enter').onclick=()=>{const role=$('role').value;loginClose();$('public').classList.add('hide');$('private').classList.remove('hide');if(role==='pupil'){$('iconnav').innerHTML='';$('adminmain').innerHTML='<h2>PROVA</h2><div class="emptysection">No tens cap prova assignada.</div>';return}$('iconnav').innerHTML='';sections.forEach(([icon,name],i)=>{const b=document.createElement('button');b.textContent=icon;b.title=name;b.setAttribute('aria-label',name);b.onclick=()=>showSection(i);$('iconnav').append(b)});showSection(0)};
 $('logout').onclick=()=>location.reload();document.addEventListener('keydown',e=>{if(e.key==='Escape')loginClose()});
 </script></body></html>
