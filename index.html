@@ -26,7 +26,7 @@
 /* Llistat de proves: fidelitat visual a la pantalla de referència */
 .testtable{width:100%;border-collapse:collapse;table-layout:auto;border:1px solid #171717;font-size:15px}.testtable th,.testtable td{border-bottom:1px solid #171717;padding:16px 12px;text-align:left;vertical-align:middle}.testtable th{font-weight:900}.testtable td:nth-child(2){min-width:104px}.testtable td:last-child{width:52%;line-height:1.9}.reading-link{background:none;border:0;color:#003957;font-weight:800;font-size:14px;cursor:pointer;padding:0 8px 0 0;text-align:left}.reading-link:hover{text-decoration:underline}.reading-note{font-size:13px;color:#666;margin:14px 0}.filters.testfilters{margin-bottom:34px}.testfilters select{min-width:140px}.testfilters input{min-width:190px}.reading-preview{border:1px solid #bbb;padding:22px;background:white;max-width:760px;margin-top:20px}.reading-preview button{border:1px solid #003957;background:#fff;padding:9px 16px;cursor:pointer}.testtable tr:hover td{background:#fafafa}@media(max-width:760px){.testtable{font-size:13px}.testtable th,.testtable td{padding:10px 7px}.testtable td:last-child{min-width:220px}}
 </style><style>
-/* Assignació de proves: prototip sense persistència ni dades reals */
+/* Assignació de proves: demostració amb persistència local, sense dades reals */
 .assign-heading{display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap}
 .assign-heading h2{font-size:26px;color:#a44382;margin:0 0 14px;font-weight:900}
 .assignfilters{margin-bottom:46px}.assign-warning{margin:0 15px 46px;font-size:16px;color:#111}
@@ -42,6 +42,8 @@
 .assign-message{font-size:14px;color:#0a4861;margin:12px 0;min-height:20px}.assign-message.error{color:#a00035}
 .assign-note{font-size:12px;color:#666;margin:12px 0 16px}
 @media(max-width:800px){.assignfilters{margin-bottom:24px}.assign-warning{margin:0 0 28px}}
+</style><style>
+.pupil-picker{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:18px 0 25px}.pupil-picker select{padding:10px 12px;border:1px solid #064465;border-radius:4px;min-width:240px;font:inherit}.pupil-card{max-width:850px;border:1px solid #ddd;padding:22px;margin-top:12px}.pupil-card h3{margin:0 0 12px;color:#a44382}.pupil-readings{margin:15px 0;padding-left:23px;line-height:2}.pupil-status{font-size:14px;color:#555}.pupil-demo{border-left:4px solid #209698;background:#f0f8f8;padding:12px 16px;margin-bottom:22px;max-width:850px}.pupil-card button{border:1px solid #064465;border-radius:4px;background:#fff;padding:9px 13px;color:#064465;font-weight:800}.pupil-card button:hover{background:#f0f8f8}
 </style></head><body>
 <section id="public"><div class="hero paper"><header class="top"><div class="identity">PCLEC<small>Escola Sant Jeroni</small></div><div class="right"><div class="langs"><button class="active" data-lang="CA">CA</button><button data-lang="ES">ES</button><button data-lang="EN">EN</button></div><button class="login-btn" id="openLogin">ÀREA D'USUARI&nbsp; ◉</button></div></header><div class="headline"><h1>Proves de comprensió<br>lectora</h1><p>Mesura de la comprensió lectora de<br>segon a sisè d'Educació Primària</p></div><div class="kids" aria-label="Il·lustració d'infants llegint"></div></div><div class="tealbar"><button id="openMenu" aria-label="Obrir menú">☰</button></div><footer class="footer"><strong>PCLEC · Escola Sant Jeroni</strong>Plataforma de comprensió lectora · Accés restringit al centre</footer></section>
 <div class="overlay hide" id="overlay"><div class="dialog" role="dialog" aria-modal="true" aria-labelledby="loginTitle"><button class="close" id="closeLogin" aria-label="Tancar">×</button><h2 id="loginTitle">Àrea d'usuari</h2><label class="field" for="user">Usuari</label><input id="user" autocomplete="off" placeholder="Usuari de demostració"><label class="field" for="password">Contrasenya</label><input id="password" type="password" placeholder="Contrasenya de demostració"><label class="field" for="role">Perfil de prova</label><select id="role"><option value="teacher">Docent</option><option value="admin">Administrador</option><option value="pupil">Alumne/a</option></select><button class="primary" id="enter">Entrar (demostració)</button><div class="hint">Prototip visual. Encara no hi ha autenticació real. No introdueixis credencials personals ni dades d'alumnes.</div></div></div>
@@ -97,8 +99,11 @@ function showTests(){
 }
 
 
-// Estat únicament en memòria. En actualitzar la pàgina es reinicia.
-const assignmentState=new Map();
+// Assignacions fictícies persistents al mateix navegador i origen web.
+const STORAGE_KEY='pclec_sant_jeroni_assignacions_demo_v1';
+function loadAssignments(){try{const raw=JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}');const entries=Object.entries(raw).filter(([id,a])=>pupils.some(p=>p[0]===id)&&a&&tests.some(t=>t[0]===a.id));return new Map(entries)}catch(e){return new Map()}}
+const assignmentState=loadAssignments();
+function saveAssignments(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(Object.fromEntries(assignmentState)));return true}catch(e){return false}}
 function csvEscape(value){const s=String(value??'');return '"'+s.replace(/"/g,'""')+'"'}
 function showAssignments(){
  $('adminmain').innerHTML=`<div class="assign-heading"><h2>Assignació de proves a l'alumnat</h2></div>
@@ -108,7 +113,7 @@ function showAssignments(){
  <div class="assign-tools" id="assigntools" hidden><label for="assignmodel">Prova:</label><select id="assignmodel" aria-label="Escollir prova"></select><button id="confirmassign">Confirmar assignació fictícia</button><button id="cancelassign" class="secondary">Cancel·lar</button></div>
  <div class="assign-message" id="assignmessage" role="status" aria-live="polite"></div>
  <div class="tablewrap"><table class="assign-table"><thead><tr><th><input type="checkbox" id="assignall" aria-label="Seleccionar visibles"></th><th>ID</th><th>Nom</th><th>Cognoms</th><th>Usuari</th><th>Nivell</th><th>Grup</th><th>Prova<br>assignada</th><th>Aplicació<br>1</th><th>Aplicació<br>2</th><th><button id="assigncsv" title="Exportar CSV fictici" style="background:none;border:0;color:#064465;font-weight:900;cursor:pointer">EXPORTAR<br>CSV</button></th></tr></thead><tbody id="assignrows"></tbody></table></div>
- <p class="assign-note">Demostració amb cinc alumnes ficticis. Les assignacions no es desen al servidor ni sobreviuen a una recàrrega. Aplicació 1 i 2 queden sense dades perquè no s'ha simulat cap prova realitzada.</p>`;
+ <p class="assign-note">Demostració amb cinc alumnes ficticis. Les assignacions es conserven en aquest navegador, però no es comparteixen entre dispositius ni es desen al servidor. Aplicació 1 i 2 queden sense dades perquè no s'ha simulat cap prova realitzada.</p>`;
  const selected=new Set();let visible=[];
  const message=(txt,error=false)=>{$('assignmessage').textContent=txt;$('assignmessage').classList.toggle('error',error)};
  const filtered=()=>pupils.filter(p=>(!$('assignlevel').value||p[5]===$('assignlevel').value)&&(!$('assigngroup').value||p[6]===$('assigngroup').value)&&p.join(' ').toLocaleLowerCase().includes($('assignsearch').value.toLocaleLowerCase()));
@@ -122,11 +127,28 @@ function showAssignments(){
  $('assignaction').onchange=updateApply;
  $('assignapply').onclick=()=>{if(!selected.size)return;const levels=[...new Set([...selected].map(id=>pupils.find(p=>p[0]===id)?.[5]).filter(Boolean))];const candidates=tests.filter(t=>(!$('assignlang').value||t[2]===$('assignlang').value)&&levels.includes(t[4]));$('assignmodel').innerHTML='<option value="">Selecciona una prova</option>'+candidates.map(t=>`<option value="${t[0]}">${t[1]} · ${t[2]} · ${t[4]}</option>`).join('');$('assigntools').hidden=false;message('Selecciona una prova del catàleg parcial per simular l’assignació.')};
  $('cancelassign').onclick=()=>{$('assigntools').hidden=true;message('Assignació cancel·lada.')};
- $('confirmassign').onclick=()=>{const test=tests.find(t=>t[0]===$('assignmodel').value);if(!test){message('Selecciona una prova.',true);return}const ids=[...selected];const busy=ids.filter(id=>assignmentState.has(id));if(busy.length){message(`No es pot assignar: ${busy.length} alumne(s) ja tenen una prova pendent. No s’ha modificat cap assignació.`,true);return}const wrong=ids.filter(id=>pupils.find(p=>p[0]===id)?.[5]!==test[4]);if(wrong.length){message(`La prova és de ${test[4]} i ${wrong.length} alumne(s) seleccionat(s) són d'un altre nivell. No s’ha modificat cap assignació.`,true);return}ids.forEach(id=>assignmentState.set(id,{id:test[0],label:test[1]+' · '+test[2]}));selected.clear();$('assigntools').hidden=true;message(`Assignació simulada correctament per a ${ids.length} alumne(s).`);render()};
+ $('confirmassign').onclick=()=>{const test=tests.find(t=>t[0]===$('assignmodel').value);if(!test){message('Selecciona una prova.',true);return}const ids=[...selected];const busy=ids.filter(id=>assignmentState.has(id));if(busy.length){message(`No es pot assignar: ${busy.length} alumne(s) ja tenen una prova pendent. No s’ha modificat cap assignació.`,true);return}const wrong=ids.filter(id=>pupils.find(p=>p[0]===id)?.[5]!==test[4]);if(wrong.length){message(`La prova és de ${test[4]} i ${wrong.length} alumne(s) seleccionat(s) són d'un altre nivell. No s’ha modificat cap assignació.`,true);return}ids.forEach(id=>assignmentState.set(id,{id:test[0],label:test[1]+' · '+test[2]}));selected.clear();$('assigntools').hidden=true;const saved=saveAssignments();message(`Assignació simulada correctament per a ${ids.length} alumne(s). ${saved?'Desada en aquest navegador.':'Atenció: el navegador no permet desar-la; es perdrà en recarregar.'}`,!saved);render()};
  $('assigncsv').onclick=()=>{const rows=[['ID','Nom','Cognoms','Usuari','Nivell','Grup','Prova assignada','Aplicació 1','Aplicació 2'],...visible.map(p=>[p[0],p[1],p[2],p[3],p[5],p[6],assignmentState.get(p[0])?.label||'----','----','----'])];const csv='\uFEFF'+rows.map(r=>r.map(csvEscape).join(';')).join('\r\n');const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='pclec_assignacions_demo.csv';document.body.append(a);a.click();a.remove();URL.revokeObjectURL(url);message('CSV de demostració exportat (només dades fictícies).')};
  render();
 }
 
-$('enter').onclick=()=>{const role=$('role').value;loginClose();$('public').classList.add('hide');$('private').classList.remove('hide');if(role==='pupil'){$('iconnav').innerHTML='';$('adminmain').innerHTML='<h2>PROVA</h2><div class="emptysection">No tens cap prova assignada.</div>';return}$('iconnav').innerHTML='';sections.forEach(([icon,name],i)=>{const b=document.createElement('button');b.textContent=icon;b.title=name;b.setAttribute('aria-label',name);b.onclick=()=>showSection(i);$('iconnav').append(b)});showSection(0)};
-$('logout').onclick=()=>location.reload();document.addEventListener('keydown',e=>{if(e.key==='Escape')loginClose()});
+// Escapem qualsevol text abans d'inserir-lo a HTML.
+function escapeHtml(v){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function showPupil(){
+ $('iconnav').innerHTML='';
+ $('adminmain').innerHTML=`<h2>PROVA</h2><div class="pupil-demo">Entorn de demostració amb alumnat fictici. Tria un alumne per consultar la seva prova assignada en aquest navegador.</div><div class="pupil-picker"><label for="pupilselect"><strong>Alumne/a:</strong></label><select id="pupilselect" aria-label="Seleccionar alumne fictici">${pupils.map(p=>`<option value="${p[0]}">${escapeHtml(p[1]+' '+p[2])} · ${p[5]} ${p[6]}</option>`).join('')}</select></div><div id="pupilcontent" aria-live="polite"></div>`;
+ const preferred=pupils.find(p=>p[1]==='Marina');if(preferred)$('pupilselect').value=preferred[0];
+ function renderPupil(){
+  const p=pupils.find(x=>x[0]===$('pupilselect').value);if(!p)return;
+  const assigned=assignmentState.get(p[0]);const test=assigned&&tests.find(t=>t[0]===assigned.id);
+  if(!test){$('pupilcontent').innerHTML='<div class="emptysection">No tens cap prova assignada.</div>';return}
+  $('pupilcontent').innerHTML=`<div class="pupil-card"><h3>${escapeHtml(test[1])} · ${escapeHtml(test[2])}</h3><p><strong>Nivell:</strong> ${escapeHtml(test[4])} &nbsp; <strong>Model:</strong> ${escapeHtml(test[3])}</p><p class="pupil-status">Prova assignada · Pendent de realitzar</p><h4>Lectures de la prova</h4><ol class="pupil-readings">${test[5].map((r,i)=>`<li><button type="button" data-pupil-reading="${i}">${escapeHtml(r)}</button></li>`).join('')}</ol><p class="pupil-status">Les lectures i les preguntes originals encara estan pendents d'importar. En aquesta fase només es pot consultar el títol; no es pot començar ni completar l'avaluació.</p><div id="pupilreadingdetail" aria-live="polite"></div></div>`;
+  document.querySelectorAll('[data-pupil-reading]').forEach(b=>b.onclick=()=>{const title=test[5][Number(b.dataset.pupilReading)];$('pupilreadingdetail').innerHTML=`<div class="demo"><strong>${escapeHtml(title)}</strong><p>Material original pendent d'incorporar. No hi ha preguntes fictícies ni qualificació.</p></div>`});
+ }
+ $('pupilselect').onchange=renderPupil;renderPupil();
+}
+function enterApp(){const role=$('role').value;loginClose();$('public').classList.add('hide');$('private').classList.remove('hide');if(role==='pupil'){showPupil();return}$('iconnav').innerHTML='';sections.forEach(([icon,name],i)=>{const b=document.createElement('button');b.textContent=icon;b.title=name;b.setAttribute('aria-label',name);b.onclick=()=>showSection(i);$('iconnav').append(b)});showSection(0)}
+$('enter').onclick=enterApp;
+$('logout').onclick=()=>{loginClose();$('private').classList.add('hide');$('public').classList.remove('hide');$('adminmain').innerHTML='';$('iconnav').innerHTML='';$('password').value=''};
+document.addEventListener('keydown',e=>{if(e.key==='Escape')loginClose()});
 </script></body></html>
