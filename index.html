@@ -134,20 +134,15 @@ function showAssignments(){
 
 // Escapem qualsevol text abans d'inserir-lo a HTML.
 function escapeHtml(v){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function showPupil(){
+function showPupil(p){
  $('iconnav').innerHTML='';
- $('adminmain').innerHTML=`<h2>PROVA</h2><div class="pupil-demo">Entorn de demostració amb alumnat fictici. Tria un alumne per consultar la seva prova assignada en aquest navegador.</div><div class="pupil-picker"><label for="pupilselect"><strong>Alumne/a:</strong></label><select id="pupilselect" aria-label="Seleccionar alumne fictici">${pupils.map(p=>`<option value="${p[0]}">${escapeHtml(p[1]+' '+p[2])} · ${p[5]} ${p[6]}</option>`).join('')}</select></div><div id="pupilcontent" aria-live="polite"></div>`;
- const preferred=pupils.find(p=>p[1]==='Marina');if(preferred)$('pupilselect').value=preferred[0];
- function renderPupil(){
-  const p=pupils.find(x=>x[0]===$('pupilselect').value);if(!p)return;
-  const assigned=assignmentState.get(p[0]);const test=assigned&&tests.find(t=>t[0]===assigned.id);
-  if(!test){$('pupilcontent').innerHTML='<div class="emptysection">No tens cap prova assignada.</div>';return}
-  $('pupilcontent').innerHTML=`<div class="pupil-card"><h3>${escapeHtml(test[1])} · ${escapeHtml(test[2])}</h3><p><strong>Nivell:</strong> ${escapeHtml(test[4])} &nbsp; <strong>Model:</strong> ${escapeHtml(test[3])}</p><p class="pupil-status">Prova assignada · Pendent de realitzar</p><h4>Lectures de la prova</h4><ol class="pupil-readings">${test[5].map((r,i)=>`<li><button type="button" data-pupil-reading="${i}">${escapeHtml(r)}</button></li>`).join('')}</ol><p class="pupil-status">Les lectures i les preguntes originals encara estan pendents d'importar. En aquesta fase només es pot consultar el títol; no es pot començar ni completar l'avaluació.</p><div id="pupilreadingdetail" aria-live="polite"></div></div>`;
-  document.querySelectorAll('[data-pupil-reading]').forEach(b=>b.onclick=()=>{const title=test[5][Number(b.dataset.pupilReading)];$('pupilreadingdetail').innerHTML=`<div class="demo"><strong>${escapeHtml(title)}</strong><p>Material original pendent d'incorporar. No hi ha preguntes fictícies ni qualificació.</p></div>`});
- }
- $('pupilselect').onchange=renderPupil;renderPupil();
+ $('adminmain').innerHTML=`<h2>PROVA</h2><div class="pupil-demo">Entorn de demostració amb dades fictícies. Sessió de ${escapeHtml(p[1]+' '+p[2])} · ${escapeHtml(p[5]+' '+p[6])}.</div><div id="pupilcontent" aria-live="polite"></div>`;
+ const assigned=assignmentState.get(p[0]);const test=assigned&&tests.find(t=>t[0]===assigned.id);
+ if(!test){$('pupilcontent').innerHTML='<div class="emptysection">No tens cap prova assignada.</div>';return}
+ $('pupilcontent').innerHTML=`<div class="pupil-card"><h3>${escapeHtml(test[1])} · ${escapeHtml(test[2])}</h3><p><strong>Nivell:</strong> ${escapeHtml(test[4])} &nbsp; <strong>Model:</strong> ${escapeHtml(test[3])}</p><p class="pupil-status">Prova assignada · Pendent de realitzar</p><h4>Lectures de la prova</h4><ol class="pupil-readings">${test[5].map((r,i)=>`<li><button type="button" data-pupil-reading="${i}">${escapeHtml(r)}</button></li>`).join('')}</ol><p class="pupil-status">Les lectures i les preguntes originals encara estan pendents d'importar. En aquesta fase només es pot consultar el títol; no es pot començar ni completar l'avaluació.</p><div id="pupilreadingdetail" aria-live="polite"></div></div>`;
+ document.querySelectorAll('[data-pupil-reading]').forEach(b=>b.onclick=()=>{const title=test[5][Number(b.dataset.pupilReading)];$('pupilreadingdetail').innerHTML=`<div class="demo"><strong>${escapeHtml(title)}</strong><p>Material original pendent d'incorporar. No hi ha preguntes fictícies ni qualificació.</p></div>`});
 }
-function enterApp(){const role=$('role').value;loginClose();$('public').classList.add('hide');$('private').classList.remove('hide');if(role==='pupil'){showPupil();return}$('iconnav').innerHTML='';sections.forEach(([icon,name],i)=>{const b=document.createElement('button');b.textContent=icon;b.title=name;b.setAttribute('aria-label',name);b.onclick=()=>showSection(i);$('iconnav').append(b)});showSection(0)}
+function enterApp(){const role=$('role').value;if(role==='pupil'&&!pupils.some(p=>p[3].toLowerCase()===$('user').value.trim().toLowerCase())){alert('Usuari fictici no reconegut. Per provar Marina, escriu mferrer.');return}loginClose();$('public').classList.add('hide');$('private').classList.remove('hide');if(role==='pupil'){const username=$('user').value.trim().toLowerCase();const pupil=pupils.find(p=>p[3].toLowerCase()===username);if(!pupil)returnshowPupil(pupil);return}$('iconnav').innerHTML='';sections.forEach(([icon,name],i)=>{const b=document.createElement('button');b.textContent=icon;b.title=name;b.setAttribute('aria-label',name);b.onclick=()=>showSection(i);$('iconnav').append(b)});showSection(0)}
 $('enter').onclick=enterApp;
 $('logout').onclick=()=>{loginClose();$('private').classList.add('hide');$('public').classList.remove('hide');$('adminmain').innerHTML='';$('iconnav').innerHTML='';$('password').value=''};
 document.addEventListener('keydown',e=>{if(e.key==='Escape')loginClose()});
