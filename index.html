@@ -57,7 +57,7 @@ $('openLogin').onclick=loginOpen;$('closeLogin').onclick=loginClose;
 $('overlay').onclick=e=>{if(e.target===$('overlay'))loginClose()};
 $('openMenu').onclick=()=>alert('Menú públic pendent de completar.');
 document.querySelectorAll('[data-lang]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-lang]').forEach(x=>x.classList.remove('active'));b.classList.add('active')});
-const pupils=[['50001','Marina','Ferrer Solé','mferrer','F','3P','A'],['50002','Pau','Roca Vidal','proca','M','3P','A'],['50003','Júlia','Serra Costa','jserra','F','4P','B'],['50004','Marc','Pons Rius','mpons','M','5P','A'],['50005','Aina','Font Puig','afont','F','6P','B']];
+const pupils=[['50001','Marina','Ferrer Solé','mferrer','F','2P','A'],['50002','Pau','Roca Vidal','proca','M','3P','A'],['50003','Júlia','Serra Costa','jserra','F','4P','B'],['50004','Marc','Pons Rius','mpons','M','5P','A'],['50005','Aina','Font Puig','afont','F','6P','B']];
 function showSection(index){
  document.querySelectorAll('.iconnav button').forEach((b,i)=>b.classList.toggle('selected',i===index));
  const name=sections[index][1];
