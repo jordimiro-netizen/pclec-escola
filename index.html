@@ -52,7 +52,7 @@
 <section id="public"><div class="hero paper"><header class="top"><div class="identity">PCLEC<small>Escola Sant Jeroni</small></div><div class="right"><div class="langs"><button class="active" data-lang="CA">CA</button><button data-lang="ES">ES</button><button data-lang="EN">EN</button></div><button class="login-btn" id="openLogin">ÀREA D'USUARI&nbsp; ◉</button></div></header><div class="headline"><h1>Proves de comprensió<br>lectora</h1><p>Mesura de la comprensió lectora de<br>segon a sisè d'Educació Primària</p></div><div class="kids" aria-label="Il·lustració d'infants llegint"></div></div><div class="tealbar"><button id="openMenu" aria-label="Obrir menú">☰</button></div><footer class="footer"><strong>PCLEC · Escola Sant Jeroni</strong>Plataforma de comprensió lectora · Accés restringit al centre</footer></section>
 <div class="overlay hide" id="overlay"><div class="dialog" role="dialog" aria-modal="true" aria-labelledby="loginTitle"><button class="close" id="closeLogin" aria-label="Tancar">×</button><h2 id="loginTitle">Àrea d'usuari</h2><label class="field" for="user">Usuari</label><input id="user" autocomplete="off" placeholder="Usuari de demostració"><label class="field" for="password">Contrasenya</label><input id="password" type="password" placeholder="Contrasenya de demostració"><label class="field" for="role">Perfil de prova</label><select id="role"><option value="teacher">Docent</option><option value="admin">Administrador</option><option value="pupil">Alumne/a</option></select><button class="primary" id="enter">Entrar (demostració)</button><div class="hint">Prototip visual. Encara no hi ha autenticació real. No introdueixis credencials personals ni dades d'alumnes.</div></div></div>
 <section id="private" class="hide"><header class="adminheader"><div class="adminbrand">PCLEC<small>Escola Sant Jeroni</small></div><div class="adminlangs"><span>CA</span><span>ES</span><span>EN</span></div><div class="adminright"><span>Àrea de gestió</span><button id="logout">TANCAR ⇥</button></div><div class="schoolname">ESCOLA SANT JERONI<small>08027146</small></div><nav class="iconnav" id="iconnav" aria-label="Seccions de gestió"></nav></header><main class="adminmain" id="adminmain"></main></section>
-<script>
+<script src="models.js"></script><script>
 const $=id=>document.getElementById(id);
 const sections=[['♧','Gestió d’usuaris'],['▤','Llistat de proves'],['▣','Assignació de proves'],['☑','Correcció'],['▥','Resultats'],['H','Històric'],['⚑','Ajuda']];
 function loginOpen(){$('overlay').classList.remove('hide');$('user').focus()}
@@ -136,8 +136,9 @@ function getResponses(){try{return JSON.parse(localStorage.getItem(RESPONSE_KEY)
 function putResponses(data){try{localStorage.setItem(RESPONSE_KEY,JSON.stringify(data));return true}catch(e){return false}}
 function responseId(id,app){return id+'_'+app}
 function getResponse(id,app){return getResponses()[responseId(id,app)]}
-function scoreResponse(r){if(!r)return null;const keys={q1:'C',q2:'B',q3:'C',q5:'C',q6:'B',q7:'A',q8:['A','C'],q9:'C',q11:'B',q12:'C'};let score=0;for(const [k,v] of Object.entries(keys)){const actual=r.answers?.[k];if(Array.isArray(v)){if(Array.isArray(actual)&&v.length===actual.length&&v.every(x=>actual.includes(x)))score++}else if(actual===v)score++}score+=Number(r.corrections?.q4===1)+Number(r.corrections?.q10===1);return score}
-function responseStatus(id,app){const r=getResponse(id,app);return r?(r.corrections?.q4!==undefined&&r.corrections?.q10!==undefined?'Corregida · '+scoreResponse(r)+'/12':'Pendent de correcció'):'----'}
+function responseQuestions(r){return PCLEC_MODELS[r.model||'149389']?.readings.flatMap(x=>x.questions)||[]}
+function scoreResponse(r){if(!r)return null;return responseQuestions(r).reduce((n,q)=>{const v=q.answer,a=r.answers?.[q.key];return n+Number(q.type==='open'?r.corrections?.[q.key]===1:Array.isArray(v)?Array.isArray(a)&&v.length===a.length&&v.every(x=>a.includes(x)):a===v)},0)}
+function responseStatus(id,app){const r=getResponse(id,app);if(!r)return '----';const qs=responseQuestions(r);return qs.length&&qs.filter(q=>q.type==='open').every(q=>[0,1].includes(r.corrections?.[q.key]))?'Corregida · '+scoreResponse(r)+'/'+qs.length:'Pendent de correcció'}
 function loadAssignments(){try{const raw=JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}');const entries=Object.entries(raw).filter(([id,a])=>pupils.some(p=>p[0]===id)&&a&&tests.some(t=>t[0]===a.id));return new Map(entries)}catch(e){return new Map()}}
 const assignmentState=loadAssignments();
 function saveAssignments(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(Object.fromEntries(assignmentState)));return true}catch(e){return false}}
@@ -176,16 +177,11 @@ function showPupil(p){
  $('adminmain').innerHTML=`<h2>PROVA</h2><div class="pupil-demo">Entorn de demostració amb dades fictícies. Sessió de ${escapeHtml(p[1]+' '+p[2])} · ${escapeHtml(p[5]+' '+p[6])}.</div><div id="pupilcontent"></div>`;
  const assigned=assignmentState.get(p[0]),test=assigned&&tests.find(t=>t[0]===assigned.id);
  if(!test){$('pupilcontent').innerHTML='<div class="emptysection">No tens cap prova assignada.</div>';return}
- const available=test[0]==='149389';const app=Number(assigned.application)||1;
+ const available=!!PCLEC_MODELS[test[0]];const app=Number(assigned.application)||1;
  $('pupilcontent').innerHTML=`<div class="pupil-card"><h3>${escapeHtml(test[1])} · ${escapeHtml(test[2])}</h3><p><strong>Nivell:</strong> ${escapeHtml(test[4])} &nbsp; <strong>Model:</strong> ${escapeHtml(test[3])}</p><h4>Lectures disponibles</h4><ol class="pupil-readings">${test[5].map(r=>`<li>${escapeHtml(r)}</li>`).join('')}</ol>${available?`<p>Prova parcial: dues lectures incorporades. Les altres lectures del model encara estan pendents.</p><p class="pupil-status">Aplicació ${app} · Assignada pel docent</p><p id="pupilstate"></p><button id="pupilstart">Començar la prova</button>`:'<p class="pupil-status">Aquest model encara no disposa de les lectures originals per realitzar-lo.</p>'}</div>`;
- if(available){const refresh=()=>{const r=getResponse(p[0],app);$('pupilstate').textContent=r?'Ja hi ha respostes registrades: '+responseStatus(p[0],app):'Pendent de realitzar';$('pupilstart').disabled=!!r};$('pupilstart').onclick=()=>{if(getResponse(p[0],app))return;location.href='prova.html?alumne='+encodeURIComponent(p[0])+'&aplicacio='+encodeURIComponent(app)};refresh()}
+ if(available){const refresh=()=>{const r=getResponse(p[0],app);$('pupilstate').textContent=r?'Ja hi ha respostes registrades: '+responseStatus(p[0],app):'Pendent de realitzar';$('pupilstart').disabled=!!r};$('pupilstart').onclick=()=>{if(getResponse(p[0],app))return;location.href='prova.html?alumne='+encodeURIComponent(p[0])+'&aplicacio='+encodeURIComponent(app)+'&model='+encodeURIComponent(test[0])};refresh()}
 }
 function showCorrections(){
- const rows=[];
- for(const [id,r] of Object.entries(getResponses())){
-  const pupil=pupils.find(p=>id.startsWith(p[0]+'_'));
-  if(pupil)rows.push({id,pupil,r});
- }
  $('adminmain').innerHTML=`<h2>Correcció de proves</h2>
  <div class="correction-filters"><select id="correctionlevel" aria-label="Nivell"><option value="">Nivell</option>${['2P','3P','4P','5P','6P'].map(v=>`<option value="${v}">${v}</option>`).join('')}</select>
  <select id="correctiongroup" aria-label="Grup"><option value="">Grup</option><option value="A">A</option><option value="B">B</option></select></div>
@@ -193,15 +189,20 @@ function showCorrections(){
  const render=()=>{
   const level=$('correctionlevel').value,group=$('correctiongroup').value;
   if(!level||!group){$('correctionlist').innerHTML='';return}
-  const found=rows.filter(({pupil})=>pupil[5]===level&&pupil[6]===group);
+  const found=Object.entries(getResponses()).map(([id,r])=>({id,r,pupil:pupils.find(p=>id.startsWith(p[0]+'_'))})).filter(({pupil})=>pupil&&pupil[5]===level&&pupil[6]===group);
   if(!found.length){$('correctionlist').innerHTML='<p class="muted">No hi ha proves lliurades per a aquest nivell i grup.</p>';return}
-  $('correctionlist').innerHTML=found.map(({id,pupil,r})=>`<div class="panel"><h3>${escapeHtml(pupil[1]+' '+pupil[2])} · Aplicació ${escapeHtml(r.application)}</h3><p>Model F1 català · Dues lectures incorporades · ${escapeHtml(responseStatus(pupil[0],r.application))}</p><p><strong>F104. On viu el panda vermell?</strong></p><blockquote>${escapeHtml(r.answers?.q4||'Sense resposta')}</blockquote><label>Puntuació F104: <select data-correction="q4" data-id="${escapeHtml(id)}"><option value="" ${r.corrections?.q4==null?'selected':''}>Pendent</option><option value="0" ${r.corrections?.q4===0?'selected':''}>0 punts</option><option value="1" ${r.corrections?.q4===1?'selected':''}>1 punt</option></select></label><p><strong>F110. Què li va donar el veterinari a en Cam?</strong></p><blockquote>${escapeHtml(r.answers?.q10||'Sense resposta')}</blockquote><label>Puntuació F110: <select data-correction="q10" data-id="${escapeHtml(id)}"><option value="" ${r.corrections?.q10==null?'selected':''}>Pendent</option><option value="0" ${r.corrections?.q10===0?'selected':''}>0 punts</option><option value="1" ${r.corrections?.q10===1?'selected':''}>1 punt</option></select></label><p class="hint">Referència: F104, muntanyes i boscos del sud de la Xina. F110, un drap fred al cap i aigua per beure.</p></div>`).join('');
-  document.querySelectorAll('[data-correction]').forEach(el=>el.onchange=()=>{
+  $('correctionlist').innerHTML=found.map(({id,pupil,r})=>{const m=PCLEC_MODELS[r.model||'149389'];return `<div class="panel"><h3>${escapeHtml(pupil[1]+' '+pupil[2])} · Aplicació ${escapeHtml(r.application)}</h3><p>${escapeHtml(m?.name||'Model desconegut')} · ${escapeHtml(responseStatus(pupil[0],r.application))}</p>${responseQuestions(r).filter(q=>q.type==='open').map(q=>`<p><strong>${escapeHtml(q.title)}</strong></p><blockquote>${escapeHtml(r.answers?.[q.key]||'Sense resposta')}</blockquote><label>Puntuació: <select data-correction="${escapeHtml(q.key)}" data-id="${escapeHtml(id)}"><option value="" ${r.corrections?.[q.key]==null?'selected':''}>Pendent</option><option value="0" ${r.corrections?.[q.key]===0?'selected':''}>0 punts</option><option value="1" ${r.corrections?.[q.key]===1?'selected':''}>1 punt</option></select></label><p class="hint">Referència provisional: ${escapeHtml(q.reference)}</p>`).join('')}</div>`}).join('');
+  const saved=getResponses();
+  document.querySelectorAll('[data-correction]').forEach(el=>{
+   const value=saved[el.dataset.id]?.corrections?.[el.dataset.correction];
+   el.value=value===0||value===1?String(value):'';
+   el.onchange=()=>{
    const all=getResponses(),r=all[el.dataset.id];if(!r)return;
    r.corrections??={};
    if(el.value==='')delete r.corrections[el.dataset.correction];else r.corrections[el.dataset.correction]=Number(el.value);
    if(!putResponses(all))alert('No s’ha pogut desar al navegador.');
    render();
+   };
   });
  };
  $('correctionlevel').onchange=render;
