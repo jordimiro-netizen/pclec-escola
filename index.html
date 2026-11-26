@@ -49,7 +49,7 @@
 .correction-filters{display:flex;gap:16px;align-items:center;margin:14px 0 32px}
 .correction-filters select{height:36px;min-width:133px;border:1px solid #073e59;border-radius:5px;background:#fff;color:#073e59;font:inherit;padding:0 16px}
 #correctionlist .panel{max-width:none;margin-top:16px}
-</style></head><body>
+</style><style>.testheading{display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap;margin-bottom:34px}.testheading h2{margin:0}.testheading .testfilters{margin:0}.testtable th,.testtable td{text-align:center}.testtable td:last-child{width:62%}.reading-link{font-weight:600}.reading-detail{padding:0 24px 30px}.reading-detail img{display:block;width:auto;max-width:100%;height:auto}.reading-detail ol{padding-left:20px}.reading-detail ol>li{margin-bottom:16px}.reading-detail ul{list-style:circle;padding-left:28px}.correct-mark{color:#16821b;font-weight:bold;font-size:18px;margin-left:5px}</style></head><body>
 <section id="public"><div class="hero paper"><header class="top"><div class="identity">PCLEC<small>Escola Sant Jeroni</small></div><div class="right"><div class="langs"><button class="active" data-lang="CA">CA</button><button data-lang="ES">ES</button><button data-lang="EN">EN</button></div><button class="login-btn" id="openLogin">ÀREA D'USUARI&nbsp; ◉</button></div></header><div class="headline"><h1>Proves de comprensió<br>lectora</h1><p>Mesura de la comprensió lectora de<br>segon a sisè d'Educació Primària</p></div><div class="kids" aria-label="Il·lustració d'infants llegint"></div></div><div class="tealbar"><button id="openMenu" aria-label="Obrir menú">☰</button></div><footer class="footer"><strong>PCLEC · Escola Sant Jeroni</strong>Plataforma de comprensió lectora · Accés restringit al centre</footer></section>
 <div class="overlay hide" id="overlay"><div class="dialog" role="dialog" aria-modal="true" aria-labelledby="loginTitle"><button class="close" id="closeLogin" aria-label="Tancar">×</button><h2 id="loginTitle">Àrea d'usuari</h2><label class="field" for="user">Usuari</label><input id="user" autocomplete="off" placeholder="Usuari de demostració"><label class="field" for="password">Contrasenya</label><input id="password" type="password" placeholder="Contrasenya de demostració"><label class="field" for="role">Perfil de prova</label><select id="role"><option value="teacher">Docent</option><option value="admin">Administrador</option><option value="pupil">Alumne/a</option></select><button class="primary" id="enter">Entrar (demostració)</button><div class="hint">Prototip visual. Encara no hi ha autenticació real. No introdueixis credencials personals ni dades d'alumnes.</div></div></div>
 <section id="private" class="hide"><header class="adminheader"><div class="adminbrand">PCLEC<small>Escola Sant Jeroni</small></div><div class="adminlangs"><span>CA</span><span>ES</span><span>EN</span></div><div class="adminright"><span>Àrea de gestió</span><button id="logout">TANCAR ⇥</button></div><div class="schoolname">ESCOLA SANT JERONI<small>08027146</small></div><nav class="iconnav" id="iconnav" aria-label="Seccions de gestió"></nav></header><main class="adminmain" id="adminmain"></main></section>
@@ -119,23 +119,34 @@ const tests=[
  ['33494','Model F 3rd','Anglès','F','3P',['MUSICAL BUMPS','MY DAY','ENGLISH SUMMER CAMP']],
  ['33464','Model F6','Castellà','F','6P',['F04. EL SECRETO DE MAX','F05. LAS ABEJAS Y LA MIEL','F06. LA RESPUESTA ES...','F07. CAZA BAJO EL HIELO']]
 ];
-function showTests(){
- $('adminmain').innerHTML=`<h2>Llistat de proves</h2><div class="filters testfilters"><select id="testlang" aria-label="Llengua"><option value="">Llengua</option><option>Català</option><option>Castellà</option><option>Anglès</option></select><select id="testmodel" aria-label="Model"><option value="">Model</option>${'ABCDEF'.split('').map(m=>`<option>${m}</option>`).join('')}</select><select id="testlevel" aria-label="Nivell"><option value="">Nivell</option>${['2P','3P','4P','5P','6P'].map(n=>`<option>${n}</option>`).join('')}</select><input id="testsearch" placeholder="Cercar..." aria-label="Cercar proves"></div><div class="tablewrap"><table class="testtable"><thead><tr><th>ID</th><th>Nom</th><th>Llengua</th><th>Model</th><th>Nivell</th><th>Lectures</th></tr></thead><tbody id="testrows"></tbody></table></div><p class="reading-note">Model F de català disponible. La resta del catàleg és parcial.</p><div id="readingpreview" aria-live="polite"></div>`;
+function showTests(saved={}){
+ $('adminmain').innerHTML=`<div class="testheading"><h2>Llistat de proves</h2><div class="filters testfilters"><select id="testlang" aria-label="Llengua"><option value="">Llengua</option><option>Català</option><option>Castellà</option><option>Anglès</option></select><select id="testmodel" aria-label="Model"><option value="">Model</option>${'ABCDEF'.split('').map(m=>`<option>${m}</option>`).join('')}</select><select id="testlevel" aria-label="Nivell"><option value="">Nivell</option>${['2P','3P','4P','5P','6P'].map(n=>`<option>${n}</option>`).join('')}</select><input id="testsearch" placeholder="Cercar..." aria-label="Cercar proves"></div></div><div class="tablewrap"><table class="testtable"><thead><tr><th>ID</th><th>Nom</th><th>Llengua</th><th>Model</th><th>Nivell</th><th>Lectures</th></tr></thead><tbody id="testrows"></tbody></table></div><p class="reading-note">Model F de català disponible. La resta del catàleg és parcial.</p>`;
+ const ids=['testlang','testmodel','testlevel','testsearch'];
+ ids.forEach(id=>{if(saved[id]!==undefined)$(id).value=saved[id]});
+ const order=['149389','33209','33208','33207','33206','33204'];
+ const ordered=tests.slice().sort((a,b)=>(order.includes(a[0])?order.indexOf(a[0]):99)-(order.includes(b[0])?order.indexOf(b[0]):99));
  const render=()=>{
   const q=$('testsearch').value.toLocaleLowerCase();
-  const found=tests.filter(t=>(!$('testlang').value||t[2]===$('testlang').value)&&(!$('testmodel').value||t[3]===$('testmodel').value)&&(!$('testlevel').value||t[4]===$('testlevel').value)&&t.flat().join(' ').toLocaleLowerCase().includes(q));
-  $('testrows').innerHTML=found.map(t=>`<tr><td>${t[0]}</td><td>${t[1]}</td><td>${t[2]}</td><td>${t[3]}</td><td>${t[4]}</td><td>${t[5].map(r=>`<button class="reading-link" data-reading="${encodeURIComponent(r)}">${r}</button>`).join(' ')}</td></tr>`).join('')||'<tr><td colspan="6">Cap prova coincideix amb els filtres.</td></tr>';
+  const found=ordered.filter(t=>(!$('testlang').value||t[2]===$('testlang').value)&&(!$('testmodel').value||t[3]===$('testmodel').value)&&(!$('testlevel').value||t[4]===$('testlevel').value)&&t.flat().join(' ').toLocaleLowerCase().includes(q));
+  $('testrows').innerHTML=found.map(t=>`<tr>${t.slice(0,5).map(v=>`<td>${escapeHtml(v)}</td>`).join('')}<td>${t[5].map((r,i)=>`<button class="reading-link" data-model="${escapeHtml(t[0])}" data-reading="${i}">${escapeHtml(r.toLocaleUpperCase('ca'))}</button>`).join(' ')}</td></tr>`).join('')||'<tr><td colspan="6">Cap prova coincideix amb els filtres.</td></tr>';
   document.querySelectorAll('[data-reading]').forEach(b=>b.onclick=()=>{
-    const name=decodeURIComponent(b.dataset.reading);
-    const reading=Object.values(PCLEC_MODELS).flatMap(m=>m.readings).find(r=>r.title.toLocaleUpperCase().replace(' · ',' ' )===name.toLocaleUpperCase().replace('. ',' ')||r.title===name); if(reading){$('readingpreview').innerHTML=`<div class="reading-preview"><h3>${escapeHtml(name)}</h3><img style="max-width:100%;width:740px" src="${escapeHtml(reading.image)}" alt="${escapeHtml(reading.alt)}"><p>${reading.questions.length} preguntes</p><button id="closepreview">Tancar</button></div>`;$('closepreview').onclick=()=>$('readingpreview').innerHTML='';return;}
-    $('readingpreview').innerHTML=`<div class="reading-preview"><h3>${name}</h3><p>Lectura pendent d’incorporar a la biblioteca de proves. Conservarem la imatge original i les preguntes verificades quan disposem dels materials.</p><button id="closepreview">Tancar</button></div>`;
-    $('closepreview').onclick=()=>$('readingpreview').innerHTML='';
-    $('readingpreview').scrollIntoView({behavior:'smooth',block:'nearest'});
+   const t=tests.find(t=>t[0]===b.dataset.model), i=Number(b.dataset.reading);
+   const filters=Object.fromEntries(ids.map(id=>[id,$(id).value]));
+   showReading(t,i,filters);
   });
  };
- ['testlang','testmodel','testlevel','testsearch'].forEach(id=>$(id).addEventListener('input',render));render();
+ ids.forEach(id=>$(id).addEventListener('input',render));render();
 }
-
+function showReading(t,i,filters){
+ const r=PCLEC_MODELS[t[0]]?.readings[i], name=t[5][i];
+ const questions=r?.questions.map((q,j)=>{
+  const type=q.type==='open'?'Resposta oberta':Array.isArray(q.answer)?'ABCD (resposta múltiple)':'ABCD (resposta única)';
+  const choices=q.choices.map(c=>{const correct=Array.isArray(q.answer)?q.answer.includes(c.value):q.answer===c.value;return `<li>${escapeHtml(c.text.replace(/^[A-D]\.\s*/,''))}${correct?' <span class="correct-mark" aria-label="Resposta correcta provisional">✓</span>':''}</li>`}).join('');
+  return `<li>${escapeHtml(q.title.replace(/^\d+\.\s*/,''))} — ${type}${choices?`<ul>${choices}</ul>`:''}</li>`;
+ }).join('');
+ $('adminmain').innerHTML=`<div class="testheading"><h2>${escapeHtml(name)}</h2><button class="reading-link" id="backtests">TORNAR AL LLISTAT</button></div>${r?`<div class="reading-detail"><img src="${escapeHtml(r.image)}" alt="${escapeHtml(r.alt||name)}"><p class="reading-note">Solucionari provisional, pendent de validació oficial.</p><ol>${questions}</ol></div>`:'<p>Lectura pendent d’incorporar a la biblioteca de proves.</p>'}`;
+ $('backtests').onclick=()=>{showTests(filters);window.scrollTo(0,0)};window.scrollTo(0,0);
+}
 
 // Assignacions fictícies persistents al mateix navegador i origen web.
 const STORAGE_KEY='pclec_sant_jeroni_assignacions_demo_v1';
