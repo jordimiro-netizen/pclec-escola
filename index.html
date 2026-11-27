@@ -101,6 +101,12 @@ function showSection(index){
 }
 
 const tests=[
+["63657", "Model D1", "Català", "D", "2P", ["Una casa niu d’ocells", "El sol"]],
+["1019", "Model D 6è", "Català", "D", "6P", ["El cicle de l’aigua", "La nota de la tutora", "Mitjans de transport originals", "El secret de les sirenes"]],
+["1018", "Model D 5è", "Català", "D", "5P", ["Els exploradors", "El cicle de l’aigua", "La nota de la tutora", "Mitjans de transport originals"]],
+["1017", "Model D 4t", "Català", "D", "4P", ["El «combustible»", "Els exploradors", "El cicle de l’aigua", "La nota de la tutora"]],
+["1016", "Model D 3r", "Català", "D", "3P", ["La calor", "El «combustible»", "Els exploradors", "El cicle de l’aigua"]],
+["1015", "Model D 2n", "Català", "D", "2P", ["La calor", "El «combustible»", "Els exploradors"]],
 ["33204", "Model F 2n", "Català", "F", "2P", ["Festa d'aniversari", "Correus electrònics amb l'avi", "Olor de peus"]],
 ["33209", "Model F 3r", "Català", "F", "3P", ["Festa d'aniversari", "Correus electrònics amb l'avi", "Olor de peus", "Insomni"]],
 ["33208", "Model F 4t", "Català", "F", "4P", ["Correus electrònics amb l'avi", "Olor de peus", "Insomni", "Breu història del te"]],
@@ -112,7 +118,6 @@ const tests=[
  ['104320','Model E1','Castellà','E','2P',['E101. OBSERVANDO EL CIELO','E102. ANIMALES POLARES']],
  ['104165','Model E1','Català','E','2P',['EN RUFUS, EL PEIX PALLASSO',"L’ARC DE SANT MARTÍ"]],
  ['65960','Model D1','Castellà','D','2P',['LA MUÑECA DESAPARECIDA','LOS PATOS']],
- ['63657','Model D1','Català','D','2P',["UNA CASA NIU D’OCELLS",'EL SOL']],
  ['33497','Model F 6th','Anglès','F','6P',['K3 RESTAURANT','UNFORGETTABLE HALLOWEEN','PET LOVERS']],
  ['33496','Model F 5th','Anglès','F','5P',['AN ORAL PRESENTATION','K3 RESTAURANT','UNFORGETTABLE HALLOWEEN']],
  ['33495','Model F 4th','Anglès','F','4P',['ENGLISH SUMMER CAMP','AN ORAL PRESENTATION','K3 RESTAURANT']],
@@ -120,10 +125,10 @@ const tests=[
  ['33464','Model F6','Castellà','F','6P',['F04. EL SECRETO DE MAX','F05. LAS ABEJAS Y LA MIEL','F06. LA RESPUESTA ES...','F07. CAZA BAJO EL HIELO']]
 ];
 function showTests(saved={}){
- $('adminmain').innerHTML=`<div class="testheading"><h2>Llistat de proves</h2><div class="filters testfilters"><select id="testlang" aria-label="Llengua"><option value="">Llengua</option><option>Català</option><option>Castellà</option><option>Anglès</option></select><select id="testmodel" aria-label="Model"><option value="">Model</option>${'ABCDEF'.split('').map(m=>`<option>${m}</option>`).join('')}</select><select id="testlevel" aria-label="Nivell"><option value="">Nivell</option>${['2P','3P','4P','5P','6P'].map(n=>`<option>${n}</option>`).join('')}</select><input id="testsearch" placeholder="Cercar..." aria-label="Cercar proves"></div></div><div class="tablewrap"><table class="testtable"><thead><tr><th>ID</th><th>Nom</th><th>Llengua</th><th>Model</th><th>Nivell</th><th>Lectures</th></tr></thead><tbody id="testrows"></tbody></table></div><p class="reading-note">Model F de català disponible. La resta del catàleg és parcial.</p>`;
+ $('adminmain').innerHTML=`<div class="testheading"><h2>Llistat de proves</h2><div class="filters testfilters"><select id="testlang" aria-label="Llengua"><option value="">Llengua</option><option>Català</option><option>Castellà</option><option>Anglès</option></select><select id="testmodel" aria-label="Model"><option value="">Model</option>${'ABCDEF'.split('').map(m=>`<option>${m}</option>`).join('')}</select><select id="testlevel" aria-label="Nivell"><option value="">Nivell</option>${['2P','3P','4P','5P','6P'].map(n=>`<option>${n}</option>`).join('')}</select><input id="testsearch" placeholder="Cercar..." aria-label="Cercar proves"></div></div><div class="tablewrap"><table class="testtable"><thead><tr><th>ID</th><th>Nom</th><th>Llengua</th><th>Model</th><th>Nivell</th><th>Lectures</th></tr></thead><tbody id="testrows"></tbody></table></div><p class="reading-note">Models D i F de català disponibles. La resta del catàleg és parcial.</p>`;
  const ids=['testlang','testmodel','testlevel','testsearch'];
  ids.forEach(id=>{if(saved[id]!==undefined)$(id).value=saved[id]});
- const order=['149389','33209','33208','33207','33206','33204'];
+ const order=['149389','33209','33208','33207','33206','33204','63657','1019','1018','1017','1016','1015'];
  const ordered=tests.slice().sort((a,b)=>(order.includes(a[0])?order.indexOf(a[0]):99)-(order.includes(b[0])?order.indexOf(b[0]):99));
  const render=()=>{
   const q=$('testsearch').value.toLocaleLowerCase();
@@ -140,11 +145,11 @@ function showTests(saved={}){
 function showReading(t,i,filters){
  const r=PCLEC_MODELS[t[0]]?.readings[i], name=t[5][i];
  const questions=r?.questions.map((q,j)=>{
-  const type=q.type==='open'?'Resposta oberta':Array.isArray(q.answer)?'ABCD (resposta múltiple)':'ABCD (resposta única)';
-  const choices=q.choices.map(c=>{const correct=Array.isArray(q.answer)?q.answer.includes(c.value):q.answer===c.value;return `<li>${escapeHtml(c.text.replace(/^[A-D]\.\s*/,''))}${correct?' <span class="correct-mark" aria-label="Resposta correcta provisional">✓</span>':''}</li>`}).join('');
+  const type=q.type==='order'?'Ordenar':q.type==='open'?'Resposta oberta':Array.isArray(q.answer)?'ABCD (resposta múltiple)':'ABCD (resposta única)';
+  const choices=q.choices.map((c,k)=>{const correct=Array.isArray(q.answer)?q.answer.includes(c.value):q.answer===c.value;return `<li>${escapeHtml(c.text.replace(/^[A-F]\.\s*/,''))}${q.type==='order'?' ('+q.answer.split(',')[k]+')':correct?' <span class="correct-mark" aria-label="Resposta correcta provisional">✓</span>':''}</li>`}).join('');
   return `<li>${escapeHtml(q.title.replace(/^\d+\.\s*/,''))} — ${type}${choices?`<ul>${choices}</ul>`:''}</li>`;
  }).join('');
- $('adminmain').innerHTML=`<div class="testheading"><h2>${escapeHtml(name)}</h2><button class="reading-link" id="backtests">TORNAR AL LLISTAT</button></div>${r?`<div class="reading-detail"><img src="${escapeHtml(r.image)}" alt="${escapeHtml(r.alt||name)}"><p class="reading-note">Solucionari provisional, pendent de validació oficial.</p><ol>${questions}</ol></div>`:'<p>Lectura pendent d’incorporar a la biblioteca de proves.</p>'}`;
+ $('adminmain').innerHTML=`<div class="testheading"><h2>${escapeHtml(name)}</h2><button class="reading-link" id="backtests">TORNAR AL LLISTAT</button></div>${r?`<div class="reading-detail"><img src="${escapeHtml(r.image)}" alt="${escapeHtml(r.alt||name)}">${r.text?`<p style="white-space:pre-line;text-align:left;line-height:1.5">${escapeHtml(r.text)}</p>`:''}<p class="reading-note">Solucionari provisional, pendent de validació oficial.</p><ol>${questions}</ol></div>`:'<p>Lectura pendent d’incorporar a la biblioteca de proves.</p>'}`;
  $('backtests').onclick=()=>{showTests(filters);window.scrollTo(0,0)};window.scrollTo(0,0);
 }
 
